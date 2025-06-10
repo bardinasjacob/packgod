@@ -1,3 +1,6 @@
 name = "packgod"
 main = "./packgod.js"
 compatibility_date = "2025-06-10"
+compatibility_flags = [
+  "nodejs_compat"
+]
