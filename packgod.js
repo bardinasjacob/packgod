@@ -1,51 +1,44 @@
-import 'dotenv/config';
-import express from 'express';
 import {
-    InteractionResponseFlags,
-    InteractionResponseType,
-    InteractionType,
-    MessageComponentTypes,
-    verifyKeyMiddleware,
-  } from 'discord-interactions';
+  InteractionType,
+  InteractionResponseType,
+  verifyKey,
+} from 'discord-interactions';
 
-const packgod = express();
+addEventListener('fetch', (event) => {
+  event.respondWith(handleRequest(event.request));
+});
 
-const PORT = process.env.PORT || 8080;
+async function handleRequest(request) {
+  const signature = request.headers.get('x-signature-ed25519');
+  const timestamp = request.headers.get('x-signature-timestamp');
+  const body = await request.text();
 
-packgod.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async function (req, res) {
-    const { id, type, data } = req.body;
+  const isValid = verifyKey(body, signature, timestamp, process.env.PUBLIC_KEY);
+  if (!isValid) {
+    return new Response('Bad request signature', { status: 401 });
+  }
 
-    if (type === InteractionType.PING) {
-        return res.send({
-            type: InteractionResponseType.PONG,
-        });
+  const json = JSON.parse(body);
+
+  if (json.type === InteractionType.PING) {
+    return Response.json({ type: InteractionResponseType.PONG });
+  }
+
+  if (json.type === InteractionType.APPLICATION_COMMAND) {
+    const name = json.data.name;
+
+    if (name === 'pack') {
+      return Response.json({
+        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        data: {
+          content: `${pickRoast}`,
+        },
+      });
     }
+  }
 
-    if (type === InteractionType.APPLICATION_COMMAND){
-        const { name } = data
-
-        if(name === "pack"){
-            return res.send({
-                type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-                data: {
-                    content: `${pickRoast()}`,
-                },
-            });
-        }
-
-        console.error(`unknown command: ${name}`);
-        return res.status(400).json({ error: 'unknown command' });
-    }
-
-    console.error('unknown interaction type', type);
-    return res.status(400).json({ error: 'unknown interaction type' });
-
-    
-})
-
-packgod.listen(PORT, () => {
-    console.log('Listening on port', PORT);
-  });
+  return new Response('Unhandled interaction type', { status: 400 });
+}
 
 function pickRoast(){
     const packgodRoasts = [
@@ -73,5 +66,5 @@ function pickRoast(){
         "You built like the before picture in every commercial!",
     ]
 
-return packgodRoasts[Math.floor(Math.random() * (20)) + 1]
+    return packgodRoasts[Math.floor(Math.random() * (20)) + 1]
 };
