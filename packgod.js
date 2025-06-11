@@ -8,7 +8,7 @@ addEventListener('fetch', (event) => {
   event.respondWith(handleRequest(event.request));
 });
 
-async function handleRequest(request) {
+export default async function handleRequest(request) {
   const signature = request.headers.get('x-signature-ed25519');
   const timestamp = request.headers.get('x-signature-timestamp');
   const body = await request.text();
@@ -66,5 +66,5 @@ function pickRoast(){
         "You built like the before picture in every commercial!",
     ]
 
-    return packgodRoasts[Math.floor(Math.random() * (20)) + 1]
+    return packgodRoasts[Math.floor(Math.random() * packgodRoasts.length)]
 };
