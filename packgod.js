@@ -9,54 +9,51 @@ export default {
   async fetch(request, env) {
 
     if (request.method !== 'POST') {
-      return new Response('Method Not Allowed', { status: 405 });
+      return new Response('Method Maybe Allowed Ask Later', { status: 405 });
     }
 
-    try{
+    try {
       if (request.method == "POST") {
-      const body = await request.text();
-      const signature = request.headers.get('x-signature-ed25519');
-      const timestamp = request.headers.get('x-signature-timestamp');
 
-      const isValid = verifyKey(body, signature, timestamp, env.PUBLIC_KEY);
-      if (!isValid) {
-        return new Response('Bad request signature', { status: 401 });
+        const signature = request.headers.get('x-signature-ed25519');
+        const timestamp = request.headers.get('x-signature-timestamp');
+        const body = await request.arrayBuffer();
+        const bodyText = new TextDecoder().decode(body);
+
+        const isValid = verifyKey(bodyText, signature, timestamp, env.PUBLIC_KEY);
+        if (!isValid) {
+          return new Response('Bad request signature', { status: 401 });
+        }
+        return await handleRequest(bodyText)
       }
-      return handleRequest(body)
     }
-    }
-    catch(error){
-      return new Response('Error', { status: 500 });
+    catch (error) {
+      return new Response(`Internal Error: ${error.message}`, { status: 500 });
     }
   }
 }
 
-// async function verifyRequest(request) {
-//   const signature = request.headers.get('x-signature-ed25519');
-//   const timestamp = request.headers.get('x-signature-timestamp');
-
-//   const isValid = verifyKey(body, signature, timestamp, env.PUBLIC_KEY);
-//   if (!isValid) {
-//     return new Response('Bad request signature', { status: 401 });
-//   }
-// }
 
 async function handleRequest(body) {
   const json = JSON.parse(body);
 
   if (json.type === InteractionType.PING) {
-    return new Response.json({ type: InteractionResponseType.PONG });
+    return new Response(JSON.stringify({ type: 1 }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   if (json.type === InteractionType.APPLICATION_COMMAND) {
     const name = json.data.name;
 
     if (name === 'pack') {
-      return new Response.json({
+      return new Response(JSON.stringify({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
-          content: `${pickRoast()}`,
+          content: pickRoast(),
         },
+      }), {
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
