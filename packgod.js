@@ -8,7 +8,7 @@ addEventListener('fetch', (event) => {
   event.respondWith(handleRequest(event.request));
 });
 
-export default async function handleRequest(request) {
+export async function handleRequest(request) {
   const signature = request.headers.get('x-signature-ed25519');
   const timestamp = request.headers.get('x-signature-timestamp');
   const body = await request.text();
@@ -31,7 +31,7 @@ export default async function handleRequest(request) {
       return Response.json({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
-          content: `${pickRoast}`,
+          content: `${pickRoast()}`,
         },
       });
     }
