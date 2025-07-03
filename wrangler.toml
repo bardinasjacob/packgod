@@ -4,7 +4,6 @@ compatibility_date = "2025-06-10"
 compatibility_flags = [
   "nodejs_compat"
 ]
-upload_format = "modules"
 
 [vars]
 PUBLIC_KEY = "b84486d2790db08eb30f9dd759581ac2f4e9e687c57b2f60d0a6606d95f98210"
