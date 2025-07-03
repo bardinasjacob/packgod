@@ -6,15 +6,20 @@ import {
 
 export default {
   async fetch(request) {
-    const body = await request.text();
-    const signature = request.headers.get('x-signature-ed25519');
-    const timestamp = request.headers.get('x-signature-timestamp');
-
-    const isValid = verifyKey(body, signature, timestamp, process.env.PUBLIC_KEY);
-    if (!isValid) {
-      return new Response('Bad request signature', { status: 401 });
+    if (request.method == "GET") {
+      return new Response("Hello i am under the water")
     }
-    return handleRequest(body)
+    if (request.method == "POST") {
+      const body = await request.text();
+      const signature = request.headers.get('x-signature-ed25519');
+      const timestamp = request.headers.get('x-signature-timestamp');
+
+      const isValid = verifyKey(body, signature, timestamp, env.PUBLIC_KEY);
+      if (!isValid) {
+        return new Response('Bad request signature', { status: 401 });
+      }
+      return handleRequest(body)
+    }
   }
 }
 
@@ -22,7 +27,7 @@ export default {
 //   const signature = request.headers.get('x-signature-ed25519');
 //   const timestamp = request.headers.get('x-signature-timestamp');
 
-//   const isValid = verifyKey(body, signature, timestamp, process.env.PUBLIC_KEY);
+//   const isValid = verifyKey(body, signature, timestamp, env.PUBLIC_KEY);
 //   if (!isValid) {
 //     return new Response('Bad request signature', { status: 401 });
 //   }
