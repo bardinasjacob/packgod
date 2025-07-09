@@ -48,7 +48,7 @@ router.post('/', async (request, env) => {
 
 router.all('*', () => new Response('Not Found.', { status: 404 }));
 
-//validating request and returning request body in JSON form for middleware to handle
+//validating request and returning request body in JSON form for handler
 async function validateDiscord(request, env){
     if (request.method === 'POST') {
       const signature = request.headers.get('x-signature-ed25519');
@@ -66,7 +66,7 @@ async function validateDiscord(request, env){
 }
 
 
-//creating server object to export as an entry point for the cloudflare workers after verifying 
+//creating server object to export fetch handler and expose validator
 const server = {
 validateDiscord,
 fetch: router.fetch
