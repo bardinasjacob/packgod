@@ -1,55 +1,68 @@
+import { AutoRouter } from 'itty-router';
 import {
   InteractionType,
   InteractionResponseType,
   verifyKey,
 } from 'discord-interactions';
 
-export default {
-  async fetch(request) {
-    const body = await request.text();
-    const signature = request.headers.get('x-signature-ed25519');
-    const timestamp = request.headers.get('x-signature-timestamp');
+const router = AutoRouter()
 
-    const isValid = verifyKey(body, signature, timestamp, process.env.PUBLIC_KEY);
-    if (!isValid) {
-      return new Response('Bad request signature', { status: 401 });
-    }
-    return handleRequest(body)
-  }
-}
+router.get('/', async(request, env) => {
+  return new Response(`Hello I am under the water and ${env.PUBLIC_KEY}`)
+})
 
-// async function verifyRequest(request) {
-//   const signature = request.headers.get('x-signature-ed25519');
-//   const timestamp = request.headers.get('x-signature-timestamp');
-
-//   const isValid = verifyKey(body, signature, timestamp, process.env.PUBLIC_KEY);
-//   if (!isValid) {
-//     return new Response('Bad request signature', { status: 401 });
-//   }
-// }
-
-async function handleRequest(body) {
-  const json = JSON.parse(body);
-
-  if (json.type === InteractionType.PING) {
-    return Response.json({ type: InteractionResponseType.PONG });
+router.post('/', async (request, env) => {
+  const message = await validateDiscord(request, env);
+  console.log(message.type)
+  if (message.type === InteractionType.PING) {
+    console.log('Handling Ping request');
+    return new Response(JSON.stringify({
+      type: InteractionResponseType.PONG,
+    }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
-  if (json.type === InteractionType.APPLICATION_COMMAND) {
-    const name = json.data.name;
+  if (message.type === InteractionType.APPLICATION_COMMAND) {
+    const name = message.data.name;
 
     if (name === 'pack') {
-      return Response.json({
+      return new Response(JSON.stringify({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
-          content: `${pickRoast()}`,
+          content: pickRoast(),
         },
+      }), {
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
     return new Response('Unhandled interaction type', { status: 400 });
   }
+})
+
+router.all('*', () => new Response('Not Found.', { status: 404 }));
+
+async function validateDiscord(request, env){
+    if (request.method === 'POST') {
+      const signature = request.headers.get('x-signature-ed25519');
+      const timestamp = request.headers.get('x-signature-timestamp');
+      const body = await request.text();
+      const isValid = await verifyKey(body, signature, timestamp, env.PUBLIC_KEY);
+      console.log('hello')
+      if (!isValid) {
+        console.error('Invalid Request');
+        return new Response('Bad request signature.', { status: 401 });
+      }
+
+      return JSON.parse(body);
+    }
 }
+
+const server = {
+  validateDiscord,
+  fetch: router.fetch
+} 
 
 
 
@@ -81,3 +94,6 @@ function pickRoast() {
 
   return packgodRoasts[Math.floor(Math.random() * packgodRoasts.length)]
 };
+
+
+export default server;
