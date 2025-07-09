@@ -16,10 +16,8 @@ router.get('/', async(request, env) => {
 router.post('/', async (request, env) => {
   //validating request before handling POST
   const message = await validateDiscord(request, env);
-  console.log(message.type)
   //standard discord webhook handshake
   if (message.type === InteractionType.PING) {
-    console.log('Handling Ping request');
     return new Response(JSON.stringify({
       type: InteractionResponseType.PONG,
     }), {
@@ -55,7 +53,6 @@ async function validateDiscord(request, env){
       const timestamp = request.headers.get('x-signature-timestamp');
       const body = await request.text();
       const isValid = await verifyKey(body, signature, timestamp, env.PUBLIC_KEY);
-      console.log('hello')
       if (!isValid) {
         console.error('Invalid Request');
         return new Response('Bad request signature.', { status: 401 });
