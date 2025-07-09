@@ -7,9 +7,43 @@ import {
 
 const router = AutoRouter()
 
-export default {
+router.get('/', async(request, env) => {
+  return new Response(`Hello I am under the water and ${env.PUBLIC_KEY}`)
+})
 
-  async fetch(request, env) {
+router.post('/', async (request, env) => {
+  const message = await validateDiscord(request, env);
+  console.log(message.type)
+  if (message.type === InteractionType.PING) {
+    console.log('Handling Ping request');
+    return new Response(JSON.stringify({
+      type: InteractionResponseType.PONG,
+    }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (message.type === InteractionType.APPLICATION_COMMAND) {
+    const name = message.data.name;
+
+    if (name === 'pack') {
+      return new Response(JSON.stringify({
+        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        data: {
+          content: pickRoast(),
+        },
+      }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    return new Response('Unhandled interaction type', { status: 400 });
+  }
+})
+
+router.all('*', () => new Response('Not Found.', { status: 404 }));
+
+async function validateDiscord(request, env){
     if (request.method === 'POST') {
       const signature = request.headers.get('x-signature-ed25519');
       const timestamp = request.headers.get('x-signature-timestamp');
@@ -20,44 +54,15 @@ export default {
         console.error('Invalid Request');
         return new Response('Bad request signature.', { status: 401 });
       }
-      console.log('goodbye')
 
-      return router.handle(request, env);
+      return JSON.parse(body);
     }
-  }
 }
 
-router.post('/', async (request, env) => {
-  console.log("reached line 37")
-  // const message = await request.json();
-  // console.log(message.type)
-  // if (message.type === InteractionType.PING) {
-  //   console.log('Handling Ping request');
-  //   return new Response(JSON.stringify({
-  //     type: InteractionResponseType.PONG,
-  //   }), {
-  //     headers: { 'Content-Type': 'application/json' },
-  //   });
-  // }
-
-  // if (message.type === InteractionType.APPLICATION_COMMAND) {
-  //   const name = message.data.name;
-
-  //   if (name === 'pack') {
-  //     return new Response(JSON.stringify({
-  //       type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-  //       data: {
-  //         content: pickRoast(),
-  //       },
-  //     }), {
-  //       headers: { 'Content-Type': 'application/json' },
-  //     });
-  //   }
-
-  //   return new Response('Unhandled interaction type', { status: 400 });
-  // }
-})
-
+const server = {
+  validateDiscord,
+  fetch: router.fetch
+} 
 
 
 
@@ -89,3 +94,6 @@ function pickRoast() {
 
   return packgodRoasts[Math.floor(Math.random() * packgodRoasts.length)]
 };
+
+
+export default server;
