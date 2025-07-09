@@ -5,15 +5,19 @@ import {
   verifyKey,
 } from 'discord-interactions';
 
+//Using itty auto router
 const router = AutoRouter()
 
+//handling GET request
 router.get('/', async(request, env) => {
   return new Response(`Hello I am under the water and ${env.PUBLIC_KEY}`)
 })
 
 router.post('/', async (request, env) => {
+  //validating request before handling POST
   const message = await validateDiscord(request, env);
   console.log(message.type)
+  //standard discord webhook handshake
   if (message.type === InteractionType.PING) {
     console.log('Handling Ping request');
     return new Response(JSON.stringify({
@@ -25,7 +29,8 @@ router.post('/', async (request, env) => {
 
   if (message.type === InteractionType.APPLICATION_COMMAND) {
     const name = message.data.name;
-
+    
+    //handling '/pack' discord command and returning random string from pack list
     if (name === 'pack') {
       return new Response(JSON.stringify({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
@@ -43,6 +48,7 @@ router.post('/', async (request, env) => {
 
 router.all('*', () => new Response('Not Found.', { status: 404 }));
 
+//validating request and returning request body in JSON form for middleware to handle
 async function validateDiscord(request, env){
     if (request.method === 'POST') {
       const signature = request.headers.get('x-signature-ed25519');
@@ -59,9 +65,11 @@ async function validateDiscord(request, env){
     }
 }
 
+
+//creating server object to export as an entry point for the cloudflare workers after verifying 
 const server = {
-  validateDiscord,
-  fetch: router.fetch
+validateDiscord,
+fetch: router.fetch
 } 
 
 
